@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exabyte Shop | Carrito</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #050505; color: #e5e7eb; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .product-card:hover { border-color: rgba(239, 68, 68, 0.5); }
+    </style>
+</head>
+<body class="py-12">
+
+    <div class="container mx-auto px-4 max-w-6xl">
+        <div class="flex items-center justify-between mb-10">
+            <h1 class="text-3xl font-black tracking-tighter uppercase">Tu <span class="text-red-600">Setup</span></h1>
+            <a href="../index.html" class="text-sm text-gray-400 hover:text-white transition-colors">
+                <i class="fas fa-arrow-left mr-2"></i> Volver a la tienda
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-4" id="lista-productos-carrito">
+                </div>
+
+            <div class="lg:col-span-1">
+                <div class="glass p-8 rounded-3xl sticky top-24 shadow-2xl">
+                    <h2 class="text-xl font-black mb-6 uppercase tracking-widest">Resumen</h2>
+                    <div class="space-y-4 text-sm">
+                        <div class="flex justify-between text-gray-400">
+                            <span>Subtotal</span>
+                            <span id="resumen-subtotal" class="text-white font-bold">$0.00</span>
+                        </div>
+                        <div class="flex justify-between text-gray-400">
+                            <span>Impuestos (IVA 21%)</span>
+                            <span id="resumen-iva" class="text-white font-bold">$0.00</span>
+                        </div>
+                        <div class="flex justify-between text-xl font-black pt-2 border-t border-white/5">
+                            <span>TOTAL</span>
+                            <span id="resumen-total" class="text-red-500">$0.00</span>
+                        </div>
+                    </div>
+                    <button id="btn-finalizar" class="w-full mt-8 bg-red-600 hover:bg-red-700 text-white font-black py-4 rounded-xl uppercase tracking-widest transition-all flex items-center justify-center gap-3">
+                        <i class="fab fa-whatsapp text-xl"></i> Finalizar Pedido
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const contenedorCarrito = document.getElementById('lista-productos-carrito');
+        let carrito = JSON.parse(localStorage.getItem('exabyte_cart')) || [];
+
+        function renderCarrito() {
+            if (carrito.length === 0) {
+                contenedorCarrito.innerHTML = `<div class="glass p-10 rounded-2xl text-center text-gray-500">El carrito está vacío</div>`;
+                actualizarTotales();
+                return;
+            }
+
+            contenedorCarrito.innerHTML = carrito.map(item => `
+                <div class="glass p-5 rounded-2xl flex items-center gap-6 product-card transition-all">
+                    <img src="${item.image}" class="w-20 h-20 object-contain bg-white/5 rounded-lg">
+                    <div class="flex-1">
+                        <h3 class="font-bold text-white">${item.title}</h3>
+                        <p class="text-red-500 font-black">$${item.price}</p>
+                        <p class="text-xs text-gray-500">Cantidad: ${item.cantidad}</p>
+                    </div>
+                    <button onclick="eliminarItem(${item.id})" class="text-gray-600 hover:text-red-500 text-xl p-2">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            `).join('');
+            actualizarTotales();
+        }
+
+        function actualizarTotales() {
+            const subtotal = carrito.reduce((acc, item) => acc + (item.price * item.cantidad), 0);
+            const iva = subtotal * 0.21;
+            const total = subtotal + iva;
+
+            document.getElementById('resumen-subtotal').innerText = `$${subtotal.toFixed(2)}`;
+            document.getElementById('resumen-iva').innerText = `$${iva.toFixed(2)}`;
+            document.getElementById('resumen-total').innerText = `$${total.toFixed(2)}`;
+        }
+
+        function eliminarItem(id) {
+            carrito = carrito.filter(item => item.id !== id);
+            localStorage.setItem('exabyte_cart', JSON.stringify(carrito));
+            renderCarrito();
+        }
+
+        document.getElementById('btn-finalizar').addEventListener('click', () => {
+            const miTelefono = "5491122334455"; // <--- CAMBIA ESTO
+            if (carrito.length === 0) return alert("Carrito vacío");
+
+            let mensaje = "🚀 *Nuevo Pedido Exabyte*\n\n";
+            carrito.forEach(item => {
+                mensaje += `• ${item.title} (x${item.cantidad}) - $${(item.price * item.cantidad).toFixed(2)}\n`;
+            });
+            
+            const subtotal = carrito.reduce((acc, item) => acc + (item.price * item.cantidad), 0);
+            mensaje += `\n*TOTAL (con IVA): $${(subtotal * 1.21).toFixed(2)}*`;
+            
+            window.open(`https://wa.me/${miTelefono}?text=${encodeURIComponent(mensaje)}`, '_blank');
+        });
+
+        renderCarrito();
+    </script>
+</body>
+</html>

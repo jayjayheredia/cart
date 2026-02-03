@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exabyte | Insumos Tecnológicos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #050505; color: #e5e7eb; }
+        .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .tech-card:hover { border-color: #ef4444; transform: translateY(-5px); }
+        .loader { border-top-color: #ef4444; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="pt-20">
+
+    <nav class="fixed top-0 w-full z-50 glass py-4">
+        <div class="container mx-auto px-6 flex justify-between items-center">
+            <a href="index.html" class="text-2xl font-black tracking-tighter">EXA<span class="text-red-500">BYTE</span></a>
+            <div class="relative">
+                <a href="cart.html" class="flex items-center">
+                    <i class="fas fa-shopping-cart text-xl text-gray-400 cursor-pointer hover:text-red-500 transition-colors"></i>
+                    <span id="cart-count" class="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="py-12 container mx-auto px-6 text-center md:text-left">
+        <h1 class="text-4xl font-black uppercase tracking-widest mb-2">Hardware <span class="text-red-600">&</span> Componentes</h1>
+        <p class="text-gray-500">Explora lo último en tecnología certificado por Exabyte.</p>
+    </header>
+
+    <main class="container mx-auto px-6 pb-24">
+        <div id="loading" class="flex justify-center items-center py-20">
+            <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-800 h-12 w-12"></div>
+        </div>
+        <div id="productos-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"></div>
+    </main>
+
+    <script>
+        const grid = document.getElementById('productos-grid');
+        const loading = document.getElementById('loading');
+        let carrito = JSON.parse(localStorage.getItem('exabyte_cart')) || [];
+
+        async function fetchTechProducts() {
+            try {
+                const [laptopsRes, phonesRes] = await Promise.all([
+                    fetch('https://dummyjson.com/products/category/laptops'),
+                    fetch('https://dummyjson.com/products/category/smartphones')
+                ]);
+                const laptops = await laptopsRes.json();
+                const phones = await phonesRes.json();
+                renderProducts([...laptops.products, ...phones.products]);
+            } catch (error) {
+                grid.innerHTML = `<p class="text-red-500 col-span-full text-center">Error al conectar con el servidor.</p>`;
+            } finally {
+                loading.classList.add('hidden');
+            }
+        }
+
+        function renderProducts(products) {
+            grid.innerHTML = products.map(product => {
+                const productData = JSON.stringify({
+                    id: product.id,
+                    title: product.title,
+                    price: product.price,
+                    image: product.thumbnail
+                }).replace(/"/g, '&quot;');
+
+                return `
+                    <div class="glass p-5 rounded-2xl border border-white/5 tech-card group flex flex-col">
+                        <div class="relative overflow-hidden rounded-xl bg-white/5 h-48 mb-4 flex items-center justify-center">
+                            <img src="${product.thumbnail}" class="max-h-full max-w-full object-contain group-hover:scale-110 transition-transform duration-500">
+                        </div>
+                        <h3 class="font-bold text-white text-lg truncate">${product.title}</h3>
+                        <div class="flex items-center justify-between mt-auto pt-4">
+                            <p class="text-xl font-black text-white">$${product.price}</p>
+                            <button onclick="agregarAlCarrito('${productData}')" 
+                                    class="bg-red-600 hover:bg-red-700 text-white w-10 h-10 rounded-lg flex items-center justify-center shadow-lg shadow-red-600/20">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function agregarAlCarrito(productJson) {
+            const producto = JSON.parse(productJson);
+            const existe = carrito.find(item => item.id === producto.id);
+            if (existe) { existe.cantidad++; } 
+            else { carrito.push({ ...producto, cantidad: 1 }); }
+            localStorage.setItem('exabyte_cart', JSON.stringify(carrito));
+            actualizarContador();
+        }
+
+        function actualizarContador() {
+            const total = carrito.reduce((acc, item) => acc + item.cantidad, 0);
+            document.getElementById('cart-count').innerText = total;
+        }
+
+        actualizarContador();
+        fetchTechProducts();
+    </script>
+</body>
+</html>
